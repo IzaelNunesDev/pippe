@@ -1,0 +1,69 @@
+# =====================================================================
+# Anim8 Pro / Python & Backend .gitignore
+# =====================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Caches e testes
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Ambientes virtuais (Virtual Environments)
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Arquivos de IDEs e Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# Variáveis de ambiente e segredos
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# Arquivos de mídia e saídas temporárias de teste da Engine
+*.mp4
+*.webm
+*.mov
+*.avi
+*.mkv
+sample_*.mp4
+test_*.mp4
+output_*.json
+output_*.svg
+animation.svg
+animation.json
+
+# Diretórios de processamento temporário de jobs
+tmp/
+temp/
+anim8_jobs/
+uploads/
+exports/

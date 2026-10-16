@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anim8 Studio — Conversor de Vídeo para SVG Animado & Lottie</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Lottie Web Player -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="anim8-dark">
+  <div class="app-layout">
+    
+    <!-- TOP NAVBAR -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-icon-wrapper">
+          <svg class="brand-icon" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="url(#brand-grad)" stroke-width="2.5" stroke-dasharray="3 3"/>
+            <path d="M10 22 C 10 14, 22 14, 22 10" stroke="#00F0FF" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="10" cy="22" r="3" fill="#8B5CF6"/>
+            <circle cx="22" cy="10" r="3" fill="#00F0FF"/>
+            <defs>
+              <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F0FF"/>
+                <stop offset="1" stop-color="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <div class="brand-name">Anim8 <span class="badge-pro">PRO 2.0</span></div>
+          <div class="brand-subtitle">AI Video-to-Vector & Lottie Engine</div>
+        </div>
+      </div>
+
+      <div class="nav-center-actions">
+        <button id="btn-quick-demo" class="btn btn-secondary btn-sm" title="Gera um vídeo procedural de teste e processa na engine">
+          <span class="icon-sparkles">✨</span> Carregar Mascote IA (Demo)
+        </button>
+      </div>
+
+      <div class="nav-right-actions">
+        <button id="btn-copy-svg" class="btn btn-ghost btn-sm" disabled title="Copiar código SVG animado">
+          <span class="icon-copy">📋</span> Copiar SVG
+        </button>
+        <button id="btn-export-svg" class="btn btn-outline btn-sm" disabled title="Baixar arquivo .svg animado">
+          <span class="icon-download">📥</span> SVG Animado
+        </button>
+        <button id="btn-export-lottie" class="btn btn-gradient btn-sm" disabled title="Baixar arquivo .json no formato Lottie Bodymovin">
+          <span class="icon-lottie">⚡</span> Lottie JSON
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="workspace-grid">
+
+      <!-- LEFT SIDEBAR: PARAMETERS & INPUT -->
+      <aside class="sidebar-left">
+        <div class="panel-header">
+          <h2 class="panel-title">Parâmetros da Engine</h2>
+          <span class="panel-tag">Anim8 Pipeline</span>
+        </div>
+
+        <form id="vectorize-form" class="sidebar-form">
+          <!-- File Dropzone -->
+          <div class="form-group">
+            <label class="form-label">Vídeo de Entrada</label>
+            <div id="dropzone" class="dropzone">
+              <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/quicktime" class="file-hidden">
+              <div class="dropzone-content" id="dropzone-empty">
+                <div class="dropzone-icon">📹</div>
+                <div class="dropzone-text">Arraste um vídeo MP4 ou <span class="text-accent">clique aqui</span></div>
+                <div class="dropzone-hint">Vídeos curtos gerados por IA (Runway, Kling, Luma)</div>
+              </div>
+              <div class="dropzone-content hidden" id="dropzone-loaded">
+                <div class="video-preview-badge">
+                  <span class="video-name" id="selected-video-name">video.mp4</span>
+                  <button type="button" id="btn-clear-video" class="btn-icon-xs" title="Remover">✕</button>
+                </div>
+                <div class="video-meta-chips" id="selected-video-meta">
+                  <span class="chip">00:00</span>
+                  <span class="chip">Carregado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cores (Global CIELAB Palette) -->
+          <div class="form-group">
+            <div class="label-with-value">
+              <label for="slider-colors" class="form-label">Cores (Paleta Global)</label>
+              <span class="val-badge" id="val-colors">8</span>
+            </div>
+            <input type="range" id="slider-colors" min="2" max="32" value="8" step="1" class="custom-range">
+            <span class="form-help">K-Means no espaço perceptual CIELAB (elimina flickering)</span>
+          </div>
+
+          <!-- Detalhe (Min Region Area) -->
+          <div class="form-group">
+            <div class="label-with-value">
+              <label class="form-label">Detalhe</label>
+              <span class="val-badge" id="val-detail">Equilibrado</span>
+            </div>
+            <div class="segmented-control">
+              <button type="button" class="segment-btn" data-val="low">Baixo</button>
+              <button type="button" class="segment-btn active" data-val="balanced">Equilibrado</button>
+              <button type="button" class="segment-btn" data-val="high">Alto</button>
+            </div>
+            <input type="hidden" id="input-detail" value="balanced">
+            <span class="form-help">Área mínima do contorno antes de ser descartado</span>
+          </div>
+
+          <!-- Suavização (RDP + Schneider Bézier Error) -->
+          <div class="form-group">
+            <div class="label-with-value">
+              <label for="slider-smoothing" class="form-label">Suavização</label>
+              <span class="val-badge" id="val-smoothing">40</span>
+            </div>
+            <input type="range" id="slider-smoothing" min="0" max="100" value="40" step="1" class="custom-range">
+            <span class="form-help">Ajuste de Curvas de Schneider & Ramer-Douglas-Peucker</span>
+          </div>
+
+          <!-- Orçamento do caminho / Path Budget -->
+          <div class="form-group">
+            <div class="label-with-value">
+              <label for="slider-budget" class="form-label">Orçamento do caminho</label>
+              <span class="val-badge" id="val-budget">128</span>
+            </div>
+            <input type="range" id="slider-budget" min="16" max="256" value="128" step="8" class="custom-range">
+            <span class="form-help">Limite máximo de formas vetorizadas por quadro</span>
+          </div>
+
+          <!-- Taxa de quadros / FPS -->
+          <div class="form-group">
+            <div class="label-with-value">
+              <label for="slider-fps" class="form-label">Taxa de quadros (FPS)</label>
+              <span class="val-badge" id="val-fps">30</span>
+            </div>
+            <input type="range" id="slider-fps" min="10" max="60" value="30" step="2" class="custom-range">
+            <span class="form-help">Reamostragem temporal dos frames</span>
+          </div>
+
+          <!-- Antecedentes / Background Removal -->
+          <div class="form-group">
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title">Antecedentes (Fundo)</span>
+                <span class="switch-subtitle" id="label-bg-state">Sobre (Manter fundo)</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="check-remove-bg">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Modo Avançado: Stacking & Morphing -->
+          <div class="form-group advanced-feature-box">
+            <div class="switch-row">
+              <div class="switch-info">
+                <span class="switch-title text-accent">✨ Modo Pro Anti-Frestas</span>
+                <span class="switch-subtitle">Empilhamento topológico + De Casteljau</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="check-use-stacking" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="btn-vectorize" class="btn btn-primary btn-block btn-lg">
+            <span class="btn-text">⚡ Vetorizar Vídeo</span>
+          </button>
+        </form>
+      </aside>
+
+      <!-- CENTER VIEWPORT & CANVAS -->
+      <section class="viewport-center">
+        <!-- Viewport Toolbar Tabs -->
+        <div class="viewport-toolbar">
+          <div class="view-tabs">
+            <button class="view-tab active" data-view="svg">
+              <span class="tab-icon">🎨</span> Vetor SVG
+            </button>
+            <button class="view-tab" data-view="construction">
+              <span class="tab-icon">✨</span> Construção Geométrica & Nós
+            </button>
+            <button class="view-tab" data-view="split">
+              <span class="tab-icon">🌓</span> Original vs. Vetor
+            </button>
+            <button class="view-tab" data-view="lottie">
+              <span class="tab-icon">🎬</span> Lottie Player
+            </button>
+          </div>
+
+          <div class="viewport-controls">
+            <button id="btn-zoom-fit" class="btn-icon-sm" title="Ajustar zoom">🔍 100%</button>
+            <button id="btn-toggle-grid" class="btn-icon-sm" title="Grade de fundo">▦</button>
+          </div>
+        </div>
+
+        <!-- Stage Container -->
+        <div class="stage-container" id="stage-container">
+          
+          <!-- Empty / Welcome State -->
+          <div class="stage-empty" id="stage-empty">
+            <div class="empty-graphic">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="4" stroke="url(#empty-g)"/>
+                <path d="M7 16 L 10 11 L 14 15 L 17 9 L 20 13" stroke="#00F0FF" stroke-linecap="round"/>
+                <circle cx="10" cy="11" r="1.5" fill="#8B5CF6"/>
+                <circle cx="14" cy="15" r="1.5" fill="#8B5CF6"/>
+                <circle cx="17" cy="9" r="1.5" fill="#8B5CF6"/>
+                <defs>
+                  <linearGradient id="empty-g" x1="0" y1="0" x2="24" y2="24">
+                    <stop stop-color="#3B82F6"/>
+                    <stop offset="1" stop-color="#8B5CF6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <h3 class="empty-title">Pronto para Vetorizar</h3>
+            <p class="empty-desc">Arraste um vídeo no painel esquerdo ou clique em <strong>Carregar Mascote IA (Demo)</strong> para ver a mágica da conversão matemática de pixels para Bézier.</p>
+            <button class="btn btn-secondary btn-sm" id="btn-empty-demo">Carregar Demonstração Instantânea</button>
+          </div>
+
+          <!-- Loading Radar Overlay -->
+          <div class="stage-loading hidden" id="stage-loading">
+            <div class="loading-radar">
+              <div class="radar-circle"></div>
+              <div class="radar-scanner"></div>
+              <div class="radar-node node-1"></div>
+              <div class="radar-node node-2"></div>
+              <div class="radar-node node-3"></div>
+            </div>
+            <div class="loading-status-text" id="loading-stage-text">Iniciando processamento...</div>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" id="loading-progress-bar" style="width: 0%;"></div>
+            </div>
+            <div class="loading-pct" id="loading-pct-text">0%</div>
+            <div class="loading-subhint" id="loading-subhint">Executando quantização no espaço CIELAB</div>
+          </div>
+
+          <!-- VIEW: 1. SVG Viewport -->
+          <div class="canvas-viewport hidden" id="view-svg-container">
+            <div class="vector-mount" id="svg-mount"></div>
+          </div>
+
+          <!-- VIEW: 2. Geometric Construction & Nodes Viewport -->
+          <div class="canvas-viewport hidden" id="view-construction-container">
+            <div class="construction-wrapper">
+              <div class="vector-mount-bg" id="construction-svg-mount"></div>
+              <canvas id="construction-canvas" class="construction-canvas"></canvas>
+            </div>
+            <div class="construction-legend">
+              <span class="legend-item"><span class="dot dot-white"></span> Vértices (P0, P3)</span>
+              <span class="legend-item"><span class="dot dot-cyan"></span> Alças de Controle (P1, P2)</span>
+              <span class="legend-item"><span class="dot dot-purple"></span> Geometria Áurea</span>
+            </div>
+          </div>
+
+          <!-- VIEW: 3. Split-Screen Comparison Viewport -->
+          <div class="canvas-viewport hidden" id="view-split-container">
+            <div class="split-wrapper" id="split-wrapper">
+              <div class="split-layer original-layer">
+                <video id="split-video" class="split-media" muted playsinline loop></video>
+                <span class="split-tag tag-original">Original (Pixels / MP4)</span>
+              </div>
+              <div class="split-layer vector-layer" id="split-vector-wrapper">
+                <div id="split-svg-mount" class="split-media"></div>
+                <span class="split-tag tag-vector">Vetor (Curvas de Bézier)</span>
+              </div>
+              <div class="split-divider" id="split-divider">
+                <div class="split-handle">
+                  <span>◀▶</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIEW: 4. Lottie Player Viewport -->
+          <div class="canvas-viewport hidden" id="view-lottie-container">
+            <div id="lottie-mount" class="lottie-mount"></div>
+            <div class="lottie-controls">
+              <button class="btn btn-ghost btn-xs" id="btn-lottie-speed-05">0.5x</button>
+              <button class="btn btn-ghost btn-xs active" id="btn-lottie-speed-1">1x</button>
+              <button class="btn btn-ghost btn-xs" id="btn-lottie-speed-2">2x</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BOTTOM TIMELINE & CONTROLS -->
+        <footer class="timeline-bar" id="timeline-bar">
+          <div class="playback-controls">
+            <button id="btn-step-prev" class="btn-icon-playback" title="Quadro Anterior (Shift + Esquerda)">⏮</button>
+            <button id="btn-play-pause" class="btn-icon-playback btn-play" title="Reproduzir/Pausar (Espaço)">▶</button>
+            <button id="btn-step-next" class="btn-icon-playback" title="Próximo Quadro (Shift + Direita)">⏭</button>
+            <button id="btn-loop-toggle" class="btn-icon-playback active" title="Repetir em loop">🔁</button>
+          </div>
+
+          <div class="timeline-scrubber-wrapper">
+            <div class="timeline-timecode" id="timeline-timecode">00:00 / 00:00</div>
+            <input type="range" id="timeline-scrubber" min="0" max="0" value="0" step="1" class="timeline-slider">
+            <div class="timeline-frame-counter">
+              Quadro: <span class="highlight-frame" id="current-frame-idx">0</span> / <span id="total-frames-count">0</span>
+            </div>
+          </div>
+
+          <div class="timeline-shapes-info">
+            <span class="info-pill"><strong id="pill-frame-shapes">0</strong> shapes no frame</span>
+            <span class="info-pill highlight"><strong id="pill-total-shapes">0</strong> total</span>
+          </div>
+        </footer>
+      </section>
+
+      <!-- RIGHT SIDEBAR: COLOR PALETTE & INSPECTOR -->
+      <aside class="sidebar-right">
+        <div class="panel-header">
+          <h2 class="panel-title">Paleta Global</h2>
+          <span class="panel-tag">CSS Variables</span>
+        </div>
+
+        <!-- Global Color Swatches with Instant Live Recoloring -->
+        <div class="palette-section">
+          <div class="palette-hint">Clique em uma cor para trocar instantaneamente em toda a animação:</div>
+          <div class="palette-swatches-grid" id="palette-swatches-grid">
+            <div class="palette-placeholder">Nenhuma paleta gerada ainda.</div>
+          </div>
+          <button id="btn-reset-palette" class="btn btn-ghost btn-xs btn-block mt-2 hidden">Resetar Cores Originais</button>
+        </div>
+
+        <!-- Shape Inspector -->
+        <div class="inspector-section">
+          <div class="panel-header inner-header">
+            <h3 class="panel-subtitle">Inspetor de Formas</h3>
+            <span class="badge-count" id="inspector-shapes-count">0</span>
+          </div>
+          <div class="shapes-list" id="shapes-list">
+            <div class="inspector-placeholder">Aguardando vetorização...</div>
+          </div>
+        </div>
+
+        <!-- File & Compression Stats -->
+        <div class="metrics-section">
+          <div class="metric-row">
+            <span class="metric-label">Taxa de Quadros:</span>
+            <span class="metric-val" id="metric-fps">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Resolução:</span>
+            <span class="metric-val" id="metric-resolution">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Tamanho do SVG:</span>
+            <span class="metric-val text-accent" id="metric-svg-size">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Tamanho Lottie:</span>
+            <span class="metric-val text-purple" id="metric-lottie-size">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Empilhamento:</span>
+            <span class="metric-val" id="metric-stacking">-</span>
+          </div>
+        </div>
+      </aside>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JS -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
